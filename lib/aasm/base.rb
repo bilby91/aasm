@@ -69,6 +69,8 @@ module AASM
     def event(name, options={}, &block)
       @state_machine.events[name] = AASM::Core::Event.new(name, options, &block)
 
+      event_options = options[:in_transaction] ? { in_transaction: true } : { in_transaction: false }
+
       # an addition over standard aasm so that, before firing an event, you can ask
       # may_event? and get back a boolean that tells you whether the guard method
       # on the transition will let this happen.
@@ -78,12 +80,13 @@ module AASM
 
       @klass.send(:define_method, "#{name}!") do |*args, &block|
         aasm.current_event = "#{name}!".to_sym
-        aasm_fire_event(name, {:persist => true}, *args, &block)
+
+        aasm_fire_event(name, event_options.merge({:persist => true}), *args, &block)
       end
 
       @klass.send(:define_method, "#{name}") do |*args, &block|
         aasm.current_event = name.to_sym
-        aasm_fire_event(name, {:persist => false}, *args, &block)
+        aasm_fire_event(name, event_options.merge({:persist => false}), *args, &block)
       end
     end
 

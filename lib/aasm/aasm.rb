@@ -58,6 +58,8 @@ private
 
   def aasm_fire_event(event_name, options, *args, &block)
     event = self.class.aasm.state_machine.events[event_name]
+    event_fallback = event.options[:on_error_fallback_to]
+
     begin
       old_state = aasm.state_object_for_name(aasm.current_state)
 
@@ -83,7 +85,11 @@ private
         aasm_failed(event_name, old_state)
       end
     rescue StandardError => e
-      event.fire_callbacks(:error, self, e, *process_args(event, aasm.current_state, *args)) || raise(e)
+      fired = event.fire_callbacks(:error, self, e, *process_args(event, aasm.current_state, *args))
+
+      aasm.set_current_state_with_persistence(event_fallback) if event_fallback
+
+      raise(e) unless fired
     end
   end
 
@@ -135,7 +141,7 @@ private
     end
 
     if AASM::StateMachine[self.class].config.whiny_transitions
-      raise AASM::InvalidTransition.new(self, event_name) 
+      raise AASM::InvalidTransition.new(self, event_name)
     else
       false
     end
