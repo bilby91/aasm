@@ -69,7 +69,10 @@ module AASM
     def event(name, options={}, &block)
       @state_machine.events[name] = AASM::Core::Event.new(name, options, &block)
 
-      event_options = options[:in_transaction] ? { in_transaction: true } : { in_transaction: false }
+      event_options = options[:in_transaction].nil? ?
+        { in_transaction: true } :
+        { in_transaction: options[:in_transaction] }
+
 
       # an addition over standard aasm so that, before firing an event, you can ask
       # may_event? and get back a boolean that tells you whether the guard method

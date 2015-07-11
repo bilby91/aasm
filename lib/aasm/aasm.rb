@@ -85,11 +85,7 @@ private
         aasm_failed(event_name, old_state)
       end
     rescue StandardError => e
-      fired = event.fire_callbacks(:error, self, e, *process_args(event, aasm.current_state, *args))
-
-      aasm.set_current_state_with_persistence(event_fallback) if event_fallback
-
-      raise(e) unless fired
+      event.fire_callbacks(:error, self, e, *process_args(event, aasm.current_state, *args)) || raise(e)
     end
   end
 

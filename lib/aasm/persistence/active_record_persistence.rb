@@ -180,6 +180,13 @@ module AASM
           end
 
           success
+        rescue StandardError => e
+          event = self.class.aasm.state_machine.events[name]
+          event_fallback = event.options[:on_error_fallback_to]
+
+          aasm.set_current_state_with_persistence(event_fallback) if event_fallback
+
+          raise(e)
         end
 
         def requires_new?
